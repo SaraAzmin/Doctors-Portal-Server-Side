@@ -17,14 +17,33 @@ async function run() {
     try {
         await client.connect();
         const serviceCollection = client.db('doctors_portal').collection('services');
+        const bookingCollection = client.db('doctors_portal').collection('bookings');
 
-        //all data loaded
+        //all services loaded
         app.get('/service', async (req, res) => {
             const query = {};
             const cursor = serviceCollection.find(query);
             const services = await cursor.toArray();
             res.send(services);
         })
+
+        //add a new booking
+        app.post('/booking', async (req, res) => {
+            const booking = req.body;
+
+            const query = { treatment: booking.treatment, date: booking.date, patiant: booking.patiant };
+            const exist = await bookingCollection.findOne(query);
+
+            //do not add if already exists booking for same day and same treatment
+            if (exist) {
+                return res.send({ success: false, booking: exist });
+            }
+            const result = await bookingCollection.insertOne(booking);
+            res.send({ success: true, result });
+
+        })
+
+
 
     }
 
