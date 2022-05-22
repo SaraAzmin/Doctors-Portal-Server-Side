@@ -27,6 +27,39 @@ async function run() {
             res.send(services);
         })
 
+        //get only available slots
+        app.get('/available', async (req, res) => {
+
+            const date = req.query.date;
+
+            //first get all services
+            const services = await serviceCollection.find().toArray();
+
+            //then get the booking of that day
+            const query = { date: date };
+            const bookings = await bookingCollection.find(query).toArray();
+
+            //for each service, find bookings
+            services.forEach(service => {
+
+                //find bookings for this service
+                const bookingList = bookings.filter(b => b.treatment === service.name);
+
+                //make an array of the booked slots
+                const bookedSlots = bookingList.map(s => s.slot);
+
+                //take only the slots that are not booked yet
+                const available = service.slots.filter(s => !bookedSlots.includes(s));
+
+                //set available ones to slot
+                service.slots = available;
+
+            })
+
+            res.send(services);
+
+        })
+
         //add a new booking
         app.post('/booking', async (req, res) => {
             const booking = req.body;
@@ -42,8 +75,6 @@ async function run() {
             res.send({ success: true, result });
 
         })
-
-
 
     }
 
