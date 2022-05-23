@@ -53,11 +53,18 @@ async function run() {
 
                 //set available ones to slot
                 service.slots = available;
-
             })
-
             res.send(services);
 
+        })
+
+
+        //get all bookings of a user
+        app.get('/booking', async (req, res) => {
+            const patiant = req.query.patiant;
+            const query = { patiant: patiant };
+            const bookings = await bookingCollection.find(query).toArray();
+            res.send(bookings);
         })
 
         //add a new booking
