@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -27,7 +28,6 @@ async function run() {
             const services = await cursor.toArray();
             res.send(services);
         })
-
 
         //add user info
         app.put('/user/:email', async (req, res) => {
