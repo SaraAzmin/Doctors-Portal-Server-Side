@@ -102,7 +102,7 @@ async function run() {
             const patiant = req.query.patiant;
             const decodedEmail = req.decoded.email;
 
-            if (patient === decodedEmail) {
+            if (patiant === decodedEmail) {
                 const query = { patiant: patiant };
                 const bookings = await bookingCollection.find(query).toArray();
                 res.send(bookings);
