@@ -45,6 +45,8 @@ async function run() {
         const bookingCollection = client.db('doctors_portal').collection('bookings');
         const userCollection = client.db('doctors_portal').collection('users');
         const doctorCollection = client.db('doctors_portal').collection('doctors');
+        const paymentCollection = client.db('doctors_portal').collection('payments');
+
 
         //middlewere to verify if it is an admin
         const verifyAdmin = async (req, res, next) => {
@@ -59,7 +61,7 @@ async function run() {
 
         }
 
-
+        //add a payment intent
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const service = req.body;
             const price = service.price;
@@ -72,6 +74,7 @@ async function run() {
             res.send({ clientSecret: paymentIntent.client_secret })
         });
 
+
         //all services loaded
         app.get('/service', async (req, res) => {
             const query = {};
@@ -79,6 +82,7 @@ async function run() {
             const services = await cursor.toArray();
             res.send(services);
         })
+
 
         //get all users for admin
         app.get('/user', verifyJWT, async (req, res) => {
@@ -96,6 +100,7 @@ async function run() {
             res.send({ admin: isAdmin })
         })
 
+
         //set admin role to user
         app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
 
@@ -110,6 +115,7 @@ async function run() {
             res.send(result);
         });
 
+
         //add user info
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -123,6 +129,7 @@ async function run() {
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.send({ result, token });
         })
+
 
         //get only available slots
         app.get('/available', async (req, res) => {
@@ -155,6 +162,7 @@ async function run() {
 
         })
 
+
         //get all bookings of a user
         app.get('/booking', verifyJWT, async (req, res) => {
             const patiant = req.query.patiant;
@@ -171,6 +179,7 @@ async function run() {
 
         })
 
+
         //get a booking info
         app.get('/booking/:id', async (req, res) => {
             const id = req.params.id;
@@ -178,6 +187,7 @@ async function run() {
             const booking = await bookingCollection.findOne(query);
             res.send(booking);
         })
+
 
         //add a new booking
         app.post('/booking', async (req, res) => {
@@ -195,11 +205,31 @@ async function run() {
 
         })
 
+
+        //update payment paid of a booking
+        app.patch('/booking/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            const updatedBooking = await bookingCollection.updateOne(filter, updatedDoc);
+            res.send(updatedBooking);
+        })
+
+
         //get all doctos
         app.get('/doctor', verifyJWT, verifyAdmin, async (req, res) => {
             const doctors = await doctorCollection.find().toArray();
             res.send(doctors);
         })
+
 
         //add a doctor
         app.post('/doctor', verifyJWT, verifyAdmin, async (req, res) => {
@@ -207,6 +237,7 @@ async function run() {
             const result = await doctorCollection.insertOne(doctor);
             res.send(result);
         });
+
 
         //delete a doctor
         app.delete('/doctor/:email', verifyJWT, verifyAdmin, async (req, res) => {
